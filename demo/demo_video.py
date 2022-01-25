@@ -3,13 +3,14 @@ Demo for doing interesting things with a video
 """
 import sys
 sys.path.append('../')
+sys.path.insert(0, '/Users/mac/Documents/UNIST/Research/merlot_reserve')
 
 from mreserve.preprocess import video_to_segments, preprocess_video, encoder, MASK
 from mreserve.modeling import PretrainedMerlotReserve
 import jax
 import jax.numpy as jnp
 
-# This handles loading the model and getting the checkpoints.
+# This handles loading the model and getting the checkpoints to this path: ~/.cache/merlotreserve
 grid_size = (18, 32)
 model = PretrainedMerlotReserve.from_pretrained(model_name='large', image_grid_size=grid_size)
 
@@ -17,7 +18,7 @@ model = PretrainedMerlotReserve.from_pretrained(model_name='large', image_grid_s
 # Each segment is 5 seconds so it corresponds to seconds 15 - 55 of the video
 
 # Feel free to change the URL!
-video_segments = video_to_segments('pmjPjZZRhNQ.mp4')
+video_segments = video_to_segments('demo/sample.mp4')
 video_segments = video_segments[3:11]
 
 # Set up a fake classification task.

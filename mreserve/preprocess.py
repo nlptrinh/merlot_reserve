@@ -177,7 +177,7 @@ def invert_spectrogram(spectrogram, playback_speed=1, sr=22050):
     mel =  np.exp(spectrogram + np.log(eps)) - eps
     mel = np.maximum(mel, 1e-6)
     y2 = librosa.feature.inverse.mel_to_audio(mel.T, **{k: v for k, v in librosa_params.items() if
-                                                      k not in ('n_mels', 'eps')})
+                                                        k not in ('n_mels', 'eps')})
     return y2
 
 
@@ -197,12 +197,20 @@ def video_to_segments(video_fn, time_interval=5.0, segment_start_time=0.0, num_s
     :return:
     """
     # Get info
-    stream_txt = subprocess.run(f'ffprobe -i {video_fn} -show_streams -select_streams a -loglevel error',
-                                capture_output=True, shell=True, text=True).stdout
-    try:
-        duration = float(re.findall(r'duration=(\d+?\.\d+)', stream_txt)[0])
-    except IndexError:
-        raise ValueError(f"could not parse stream for {video_fn}.\n{stream_txt}")
+    # stream_txt = subprocess.run(f'ffprobe -i {video_fn} -show_streams -select_streams a -loglevel error',
+    #                             capture_output=True, shell=True, text=True).stdout
+    # try:
+    #     duration = float(re.findall(r'duration=(\d+?\.\d+)', stream_txt)[0])
+    # except IndexError:
+    #     raise ValueError(f"could not parse stream for {video_fn}.\n{stream_txt}")
+
+    stream_txt = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                                 "format=duration", "-of",
+                                 "default=noprint_wrappers=1:nokey=1", video_fn],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+    print("stream_txt.stdout:", stream_txt.stdout, type(stream_txt.stdout))
+    duration = float(stream_txt.stdout)
 
     duration -= 1.0  # just be safe to not try to get anything from the end of the video
     if duration < 5:
@@ -328,13 +336,13 @@ def video_to_segments_zero_shot(video_fn, time_interval=1.0, times=None):
             end_idx = int(sr * ts_group['end_time'])
             wav_ts = waveform[start_idx:end_idx]
             left_pad = int((total_audio_len - len(wav_ts)) / 2)
-            right_pad = int(total_audio_len - len(wav_ts) - left_pad)            
+            right_pad = int(total_audio_len - len(wav_ts) - left_pad)
             wav_ts = np.concatenate([np.zeros(left_pad, dtype=np.float32), wav_ts, np.zeros(right_pad, dtype=np.float32)], 0)
         else:
             start_idx = int(sr * (ts_group['mid_time']-2.5))
             end_idx = int(sr * (ts_group['mid_time']+2.5))
             wav_ts = waveform[start_idx:end_idx]
-        
+
         spectrograms.append(make_spectrogram(wav_ts, playback_speed=1, sr=sr))
     temp_folder.cleanup()
 
